@@ -56,7 +56,7 @@ func (f *Filter) Filter(p []byte) (bool, Type, error) {
 //  A boolean: If true, the gpsd JSON document should be logged, otherwise not logged
 //  A Type: Tells what to do with the gpsd JSON document.
 //  An error: Error ErrFilterNoSuchRule is returned if the rule is unknown.
-//  An error from the json paser can also be ret
+//  An error from the json paser can also be returned
 func (f *Filter) FilterClass(class string) (bool, Type, error) {
 	var (
 		rule *Rule
