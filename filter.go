@@ -34,30 +34,29 @@ func (f *Filter) AddRule(r *Rule) error {
 	return nil
 }
 
-//Filter takes a byte slice as input, and returns 3 types of information:
-//  A boolean: If true, the gpsd JSON document should be logged, otherwise not logged
-//  A Type: Tells what to do with the gpsd JSON document.
-//  An error: Error ErrFilterNoSuchRule is returned if the rule is unknown.
-//  An error from the json paser can also be returned, and
-//  otherwise the nil error is returned.
-func (f *Filter) Filter(p []byte) (bool, Type, error) {
+//Filter takes a byte slice as input, and returns a *Rule and an error
+// The Error ErrFilterNoSuchRule is returned if the rule is unknown.
+//  An error from the json paser can also be returned.
+// If there is an error, then *Rule is nil.
+// If there are no errors, then the error is nil
+func (f *Filter) Filter(p []byte) (*Rule, error) {
 	var (
 		c   Class
 		err error
 	)
 	if err = json.Unmarshal(p, &c); err != nil {
-		return false, TypeUnknown, err
+		return nil, err
 	}
 	return f.FilterClass(c.Class)
 }
 
-//FilterClass takes a class of type string, fx. "TPV", as input, and returns 3
-// types of information:
-//  A boolean: If true, the gpsd JSON document should be logged, otherwise not logged
-//  A Type: Tells what to do with the gpsd JSON document.
-//  An error: Error ErrFilterNoSuchRule is returned if the rule is unknown.
-//  An error from the json paser can also be returned
-func (f *Filter) FilterClass(class string) (bool, Type, error) {
+//FilterClass takes a class of type string, fx. "TPV", as input, and returns a
+// *Rule and an error
+// The Error ErrFilterNoSuchRule is returned if the rule is unknown.
+//  An error from the json paser can also be returned.
+// If there is an error, then *Rule is nil.
+// If there are no errors, then the error is nil
+func (f *Filter) FilterClass(class string) (*Rule, error) {
 	var (
 		rule *Rule
 		ok   bool
@@ -66,7 +65,7 @@ func (f *Filter) FilterClass(class string) (bool, Type, error) {
 	defer f.mutex.Unlock()
 
 	if rule, ok = f.rules[class]; ok == false {
-		return false, TypeUnknown, ErrFilterNoSuchRule
+		return nil, ErrFilterNoSuchRule
 	}
-	return rule.DoLog, rule.Type, nil
+	return rule, nil
 }
