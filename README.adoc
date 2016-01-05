@@ -1,0 +1,2 @@
+= go-gpsdfilter
+go-gpsdfilter is a Go (search word: golang) package for filtering gpsd JSON documents
