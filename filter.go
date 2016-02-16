@@ -4,6 +4,8 @@ package gpsdfilter
 import (
 	"encoding/json"
 	"sync"
+
+	"github.com/juju/errors"
 )
 
 const numberOfGpsdClassTypes = 16
@@ -39,10 +41,11 @@ func (f *Filter) AddRule(r *Rule) error {
 	defer f.mutex.Unlock()
 
 	if r == nil {
-		return ErrRuleIsNil
+		return errors.Annotate(ErrRuleIsNil, "Error: adding a filer rule")
 	}
 	if f.rules == nil {
-		return ErrFilterRulesMapNotInitialized
+		return errors.Annotate(ErrFilterRulesMapNotInitialized,
+			"Error: adding a filer rule")
 	}
 	f.rules[r.Class] = r
 
@@ -61,9 +64,15 @@ func (f *Filter) Filter(p []byte) (*Rule, error) {
 		err error
 	)
 	if err = json.Unmarshal(p, &c); err != nil {
-		return nil, err
+		annotatedErr := errors.Annotate(err,
+			"JSON document Unmarshal error")
+		return nil, annotatedErr
 	}
-	return f.FilterClass(c.Class)
+	r, err := f.FilterClass(c.Class)
+	if err != nil {
+		return r, errors.Trace(err)
+	}
+	return r, nil
 }
 
 //FilterClass takes a class of type string, fx. "TPV", as input, and returns a
@@ -82,10 +91,14 @@ func (f *Filter) FilterClass(class string) (*Rule, error) {
 	defer f.mutex.Unlock()
 
 	if f.rules == nil {
-		return nil, ErrFilterRulesMapNotInitialized
+		annotatedErr := errors.Annotate(ErrFilterRulesMapNotInitialized,
+			"empty rules map")
+		return nil, annotatedErr
 	}
 	if rule, ok = f.rules[class]; ok == false {
-		return nil, ErrFilterNoSuchRule
+		annotatedErr := errors.Annotate(ErrFilterNoSuchRule,
+			"filter rule not found")
+		return nil, annotatedErr
 	}
 	return rule, nil
 }
