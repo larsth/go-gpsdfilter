@@ -1,0 +1,3 @@
+map[string]*gpsdfilter.Rule{"PPS":(*gpsdfilter.Rule)(0x1840a2b0)}
+PASS
+ok  	github.com/larsth/go-gpsdfilter	0.009s

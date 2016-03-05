@@ -1,0 +1,218 @@
+
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+		<style>
+			body {
+				background: black;
+				color: rgb(80, 80, 80);
+			}
+			body, pre, #legend span {
+				font-family: Menlo, monospace;
+				font-weight: bold;
+			}
+			#topbar {
+				background: black;
+				position: fixed;
+				top: 0; left: 0; right: 0;
+				height: 42px;
+				border-bottom: 1px solid rgb(80, 80, 80);
+			}
+			#content {
+				margin-top: 50px;
+			}
+			#nav, #legend {
+				float: left;
+				margin-left: 10px;
+			}
+			#legend {
+				margin-top: 12px;
+			}
+			#nav {
+				margin-top: 10px;
+			}
+			#legend span {
+				margin: 0 5px;
+			}
+			.cov0 { color: rgb(192, 0, 0) }
+.cov1 { color: rgb(128, 128, 128) }
+.cov2 { color: rgb(116, 140, 131) }
+.cov3 { color: rgb(104, 152, 134) }
+.cov4 { color: rgb(92, 164, 137) }
+.cov5 { color: rgb(80, 176, 140) }
+.cov6 { color: rgb(68, 188, 143) }
+.cov7 { color: rgb(56, 200, 146) }
+.cov8 { color: rgb(44, 212, 149) }
+.cov9 { color: rgb(32, 224, 152) }
+.cov10 { color: rgb(20, 236, 155) }
+
+		</style>
+	</head>
+	<body>
+		<div id="topbar">
+			<div id="nav">
+				<select id="files">
+				
+				<option value="file0">github.com/larsth/go-gpsdfilter/filter.go (100.0%)</option>
+				
+				</select>
+			</div>
+			<div id="legend">
+				<span>not tracked</span>
+			
+				<span class="cov0">no coverage</span>
+				<span class="cov1">low coverage</span>
+				<span class="cov2">*</span>
+				<span class="cov3">*</span>
+				<span class="cov4">*</span>
+				<span class="cov5">*</span>
+				<span class="cov6">*</span>
+				<span class="cov7">*</span>
+				<span class="cov8">*</span>
+				<span class="cov9">*</span>
+				<span class="cov10">high coverage</span>
+			
+			</div>
+		</div>
+		<div id="content">
+		
+		<pre class="file" id="file0" style="display: none">//Package gpsdfilter is for filtering gpsd JSON documents
+package gpsdfilter
+
+import (
+        "encoding/json"
+        "sync"
+
+        "github.com/juju/errors"
+)
+
+const numberOfGpsdClassTypes = 16
+
+//Rule is a type that descripe how to filter a gpsd JSON document
+type Rule struct {
+        Class string
+        DoLog bool
+        Type  FilterType
+}
+
+//Filter contains all the filter rules of type *Rule
+type Filter struct {
+        mutex sync.Mutex
+        rules map[string]*Rule
+}
+
+//New initializes a type Filter, and returns a pointer to it
+func New() *Filter <span class="cov10" title="9">{
+        f := new(Filter)
+        f.rules = make(map[string]*Rule, numberOfGpsdClassTypes)
+
+        return f
+}</span>
+
+//Add adds a *Rule
+//Error ErrRuleIsNil is returned if the *Rule is nil.
+//Error ErrFilterRulesMapNotInitialized is returned if Filter had not been
+//initialized.
+//If there are no errors, then the nil error is returned.
+func (f *Filter) Add(r *Rule) error <span class="cov8" title="6">{
+        f.mutex.Lock()
+        defer f.mutex.Unlock()
+
+        if r == nil </span><span class="cov1" title="1">{
+                return errors.Annotate(ErrNilRule, `Error: adding a filter rule`)
+        }</span>
+        <span class="cov7" title="5">if f.rules == nil </span><span class="cov1" title="1">{
+                return errors.Annotate(ErrFilterMapNotInitialized,
+                        "Error: adding a filer rule")
+        }</span>
+        <span class="cov6" title="4">f.rules[r.Class] = r
+
+        return nil</span>
+}
+
+//Filter takes a byte slice as input, and returns a *Rule and an error
+// The error ErrFilterNoSuchRule is returned, if the rule is unknown.
+// The error ErrFilterMapNotInitialized is returned, if a *Filter had not been
+// initialized.
+//
+//  An error from the json parser can also be returned.
+//
+// If there is an error, then *Rule is nil.
+// If there are no errors, then the error is nil
+func (f *Filter) Filter(p []byte) (*Rule, error) <span class="cov6" title="4">{
+        var (
+                c   Class
+                err error
+        )
+        if err = json.Unmarshal(p, &amp;c); err != nil </span><span class="cov1" title="1">{
+                annotatedErr := errors.Annotate(err,
+                        "JSON document Unmarshal error")
+                return nil, annotatedErr
+        }</span>
+        <span class="cov5" title="3">r, err := f.Class(c.Class)
+        if err != nil </span><span class="cov3" title="2">{
+                return r, errors.Trace(err)
+        }</span>
+        <span class="cov1" title="1">return r, nil</span>
+}
+
+//Class takes a class of type string, fx. "TPV", as input, and returns a
+// *Rule and an error
+// The error ErrFilterNoSuchRule is returned if the rule is unknown.
+// The error ErrFilterMapNotInitialized is type had not been initialized.
+//  An error from the json paser can also be returned.
+// If there is an error, then *Rule is nil.
+// If there are no errors, then the error is nil
+func (f *Filter) Class(class string) (*Rule, error) <span class="cov8" title="6">{
+        var (
+                rule *Rule
+                ok   bool
+        )
+        f.mutex.Lock()
+        defer f.mutex.Unlock()
+
+        if f.rules == nil </span><span class="cov3" title="2">{
+                annotatedErr := errors.Annotate(ErrFilterMapNotInitialized,
+                        "empty rules map")
+                return nil, annotatedErr
+        }</span>
+        <span class="cov6" title="4">if rule, ok = f.rules[class]; false == ok </span><span class="cov3" title="2">{
+                annotatedErr := errors.Annotate(ErrFilterNoSuchRule,
+                        "filter rule not found")
+                return nil, annotatedErr
+        }</span>
+        <span class="cov3" title="2">return rule, nil</span>
+}
+</pre>
+		
+		</div>
+	</body>
+	<script>
+	(function() {
+		var files = document.getElementById('files');
+		var visible;
+		files.addEventListener('change', onChange, false);
+		function select(part) {
+			if (visible)
+				visible.style.display = 'none';
+			visible = document.getElementById(part);
+			if (!visible)
+				return;
+			files.value = part;
+			visible.style.display = 'block';
+			location.hash = part;
+		}
+		function onChange() {
+			select(files.value);
+			window.scrollTo(0, 0);
+		}
+		if (location.hash != "") {
+			select(location.hash.substr(1));
+		}
+		if (!visible) {
+			select("file0");
+		}
+	})();
+	</script>
+</html>

@@ -14,7 +14,7 @@ const numberOfGpsdClassTypes = 16
 type Rule struct {
 	Class string
 	DoLog bool
-	Type  Type
+	Type  FilterType
 }
 
 //Filter contains all the filter rules of type *Rule
@@ -31,20 +31,20 @@ func New() *Filter {
 	return f
 }
 
-//AddRule adds a *Rule
+//Add adds a *Rule
 //Error ErrRuleIsNil is returned if the *Rule is nil.
 //Error ErrFilterRulesMapNotInitialized is returned if Filter had not been
 //initialized.
 //If there are no errors, then the nil error is returned.
-func (f *Filter) AddRule(r *Rule) error {
+func (f *Filter) Add(r *Rule) error {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
 	if r == nil {
-		return errors.Annotate(ErrRuleIsNil, "Error: adding a filer rule")
+		return errors.Annotate(ErrNilRule, `Error: adding a filter rule`)
 	}
 	if f.rules == nil {
-		return errors.Annotate(ErrFilterRulesMapNotInitialized,
+		return errors.Annotate(ErrFilterMapNotInitialized,
 			"Error: adding a filer rule")
 	}
 	f.rules[r.Class] = r
@@ -53,9 +53,12 @@ func (f *Filter) AddRule(r *Rule) error {
 }
 
 //Filter takes a byte slice as input, and returns a *Rule and an error
-// The error ErrFilterNoSuchRule is returned if the rule is unknown.
-// The error ErrFilterRulesMapNotInitialized is type had not been initialized
-//  An error from the json paser can also be returned.
+// The error ErrFilterNoSuchRule is returned, if the rule is unknown.
+// The error ErrFilterMapNotInitialized is returned, if a *Filter had not been
+// initialized.
+//
+//  An error from the json parser can also be returned.
+//
 // If there is an error, then *Rule is nil.
 // If there are no errors, then the error is nil
 func (f *Filter) Filter(p []byte) (*Rule, error) {
@@ -68,21 +71,21 @@ func (f *Filter) Filter(p []byte) (*Rule, error) {
 			"JSON document Unmarshal error")
 		return nil, annotatedErr
 	}
-	r, err := f.FilterClass(c.Class)
+	r, err := f.Class(c.Class)
 	if err != nil {
 		return r, errors.Trace(err)
 	}
 	return r, nil
 }
 
-//FilterClass takes a class of type string, fx. "TPV", as input, and returns a
+//Class takes a class of type string, fx. "TPV", as input, and returns a
 // *Rule and an error
 // The error ErrFilterNoSuchRule is returned if the rule is unknown.
-// The error ErrFilterRulesMapNotInitialized is type had not been initialized.
+// The error ErrFilterMapNotInitialized is type had not been initialized.
 //  An error from the json paser can also be returned.
 // If there is an error, then *Rule is nil.
 // If there are no errors, then the error is nil
-func (f *Filter) FilterClass(class string) (*Rule, error) {
+func (f *Filter) Class(class string) (*Rule, error) {
 	var (
 		rule *Rule
 		ok   bool
@@ -91,11 +94,11 @@ func (f *Filter) FilterClass(class string) (*Rule, error) {
 	defer f.mutex.Unlock()
 
 	if f.rules == nil {
-		annotatedErr := errors.Annotate(ErrFilterRulesMapNotInitialized,
+		annotatedErr := errors.Annotate(ErrFilterMapNotInitialized,
 			"empty rules map")
 		return nil, annotatedErr
 	}
-	if rule, ok = f.rules[class]; ok == false {
+	if rule, ok = f.rules[class]; false == ok {
 		annotatedErr := errors.Annotate(ErrFilterNoSuchRule,
 			"filter rule not found")
 		return nil, annotatedErr
