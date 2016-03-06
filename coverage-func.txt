@@ -1,5 +1,6 @@
 github.com/larsth/go-gpsdfilter/filter.go:27:	New		100.0%
 github.com/larsth/go-gpsdfilter/filter.go:39:	Add		100.0%
 github.com/larsth/go-gpsdfilter/filter.go:64:	Filter		100.0%
-github.com/larsth/go-gpsdfilter/filter.go:88:	Class		100.0%
+github.com/larsth/go-gpsdfilter/filter.go:89:	classUnsafe	100.0%
+github.com/larsth/go-gpsdfilter/filter.go:115:	Class		100.0%
 total:						(statements)	100.0%

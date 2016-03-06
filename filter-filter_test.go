@@ -1,14 +1,27 @@
 package gpsdfilter
 
 import (
-	//"fmt"
-	//"strings"
 	"fmt"
 	"strings"
 	"testing"
 
 	"github.com/juju/errors"
 )
+
+func TestFilterFilterEmptyOrNilByteSlice(t *testing.T) {
+	var (
+		f       = New()
+		p       []byte // is 'nil'
+		wantErr = errors.Trace(ErrEmptyOrNilByteSlice)
+		gotErr  error
+		s       string
+		ok      bool
+	)
+	_, gotErr = f.Filter(p)
+	if s, ok = errorTest(gotErr, wantErr); false == ok {
+		t.Error(s)
+	}
+}
 
 func TestFilterFilterJsonError(t *testing.T) {
 	var (
